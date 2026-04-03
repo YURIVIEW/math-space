@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>똑똑 수학 우주</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ===== 전체 레이아웃 ===== */
+html,body{
+  height:100%;
+  background:#07071e;
+}
+body{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  min-height:100dvh;
+  padding:clamp(8px,2vw,20px);
+}
+#game-root{
+  font-family:'Jua','Noto Sans KR',sans-serif;
+  background:#07071e;
+  width:100%;
+  max-width:520px;
+  min-height:min(90vh,800px);
+  border-radius:clamp(16px,3vw,24px);
+  overflow:hidden;
+  position:relative;
+  color:white;
+  user-select:none;
+  border:1px solid #1a1a3a;
+  box-shadow:0 0 80px rgba(80,100,255,0.18),0 0 0 1px #1a1a4a;
+}
+
+/* ===== 배경 ===== */
+/* 별은 body 전체에 fixed로 꽉 채움 */
+.stars-bg{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;overflow:hidden;z-index:0;
+}
+.star{position:absolute;background:white;border-radius:50%;animation:twinkle 2s infinite alternate;}
+@keyframes twinkle{from{opacity:0.1}to{opacity:0.85}}
+
+/* 우주 오브젝트 */
+.floater{position:fixed;pointer-events:none;z-index:0;animation:floatAcross linear;opacity:0;}
+@keyframes floatAcross{
+  0%{transform:translateX(-80px) translateY(0px) rotate(0deg);opacity:0;}
+  8%{opacity:0.65;}
+  88%{opacity:0.55;}
+  100%{transform:translateX(calc(100vw + 80px)) translateY(-30px) rotate(15deg);opacity:0;}
+}
+.floater-down{animation-name:floatDown;}
+@keyframes floatDown{
+  0%{transform:translateY(-60px) translateX(0px);opacity:0;}
+  8%{opacity:0.6;}
+  88%{opacity:0.5;}
+  100%{transform:translateY(calc(100vh + 60px)) translateX(15px);opacity:0;}
+}
+#map-screen,#game-screen,#result-screen,#launch-screen{position:relative;z-index:1;}
+
+/* ===== MAP ===== */
+#map-screen{padding:clamp(14px,3vw,22px);}
+
+/* 만든이 정보 */
+.maker-info{
+  text-align:center;
+  font-size:clamp(10px,1.8vw,12px);
+  color:#6677aa;
+  margin-top:clamp(10px,2vw,14px);
+  padding-bottom:4px;
+  line-height:1.6;
+}
+.maker-highlight{
+  color:#bbd4ff;
+  font-weight:700;
+  letter-spacing:0.5px;
+}
+
+/* 이스터에그 팝업 */
+.easter-popup{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:#07071e;
+  border:2px solid #ffe066;
+  border-radius:20px;
+  padding:32px 28px 28px;
+  z-index:3000;
+  text-align:center;
+  min-width:240px;
+  max-width:300px;
+  cursor:pointer;
+  animation:easter-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes easter-in{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
+}
+.easter-emoji{font-size:48px;display:block;margin-bottom:10px;animation:spin-once 0.8s ease;}
+@keyframes spin-once{0%{transform:rotate(-20deg) scale(0.5)}60%{transform:rotate(10deg) scale(1.2)}100%{transform:rotate(0deg) scale(1)}}
+.easter-msg{font-size:18px;color:#ffe066;line-height:1.7;margin-bottom:0;}
+.easter-msg .name{color:#ff99cc;font-size:20px;}
+.easter-close{
+  background:#1a1a4a;border:1.5px solid #ffe066;
+  border-radius:10px;color:#ffe066;
+  font-family:inherit;font-size:14px;
+  padding:8px 20px;cursor:pointer;
+}
+.easter-close:hover{background:#2a2a5a;}
+
+/* 블랙홀 빨아들이기 효과 */
+.blackhole-effect{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:2500;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  animation:bh-fade 2.4s forwards;
+}
+@keyframes bh-fade{0%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}
+.bh-vortex{
+  font-size:80px;
+  animation:bh-spin 2.2s ease-in forwards;
+}
+@keyframes bh-spin{
+  0%{transform:scale(0.3) rotate(0deg);opacity:0;}
+  20%{transform:scale(1.6) rotate(180deg);opacity:1;}
+  60%{transform:scale(2.2) rotate(600deg);opacity:1;}
+  100%{transform:scale(0.05) rotate(1200deg);opacity:0;}
+}
+.bh-text{
+  position:absolute;
+  color:#dd88ff;font-size:clamp(14px,3vw,18px);
+  font-family:'Jua',sans-serif;
+  animation:bh-text-fade 2.4s forwards;
+  top:58%;white-space:nowrap;letter-spacing:1px;
+}
+@keyframes bh-text-fade{0%{opacity:0;}25%{opacity:1;}75%{opacity:1;}100%{opacity:0;}}
+.map-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:clamp(4px,1vw,8px);}
+.map-title{font-size:clamp(18px,4vw,24px);color:#ffe066;text-shadow:0 0 12px #ffe06655;}
+.badge-btn{
+  background:#1a1a4a;border:1.5px solid #ffe066;border-radius:10px;
+  color:#ffe066;font-family:inherit;font-size:clamp(11px,2.5vw,14px);
+  padding:clamp(5px,1vw,8px) clamp(10px,2vw,14px);
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+}
+.badge-btn:hover{background:#2a2a5a;}
+.map-subtitle{text-align:center;font-size:clamp(13px,2.2vw,15px);color:#bbd4ff;margin-bottom:clamp(12px,2.5vw,18px);}
+
+/* 2열 그리드 — 넓은 화면일수록 gap 넓어짐 */
+.planet-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:clamp(8px,2vw,16px);
+  margin-bottom:clamp(10px,2vw,14px);
+}
+.planet-btn{
+  background:#12124a;border:1.5px solid #2a2a5a;
+  border-radius:clamp(12px,2vw,16px);
+  padding:clamp(12px,2.5vw,18px) clamp(8px,1.5vw,14px);
+  cursor:pointer;transition:transform 0.15s,border-color 0.15s;
+  display:flex;flex-direction:column;align-items:center;
+  gap:clamp(4px,0.8vw,7px);position:relative;text-align:center;
+}
+.planet-btn:hover{transform:scale(1.04);border-color:#ffe066;}
+.planet-btn.completed{border-color:#66ff99;background:#0d2818;}
+.planet-emoji{font-size:clamp(28px,5vw,38px);line-height:1;}
+.planet-name{font-size:clamp(13px,2.5vw,16px);color:#ffe066;font-weight:700;}
+.planet-op{font-size:clamp(12px,2vw,14px);color:#8899bb;}
+.planet-desc{font-size:clamp(11px,2vw,13px);color:#8899bb;margin-top:1px;}
+.star-row{font-size:clamp(12px,2vw,14px);margin-top:2px;}
+.check-icon{position:absolute;top:6px;right:8px;font-size:clamp(11px,2vw,14px);color:#66ff99;}
+
+.bonus-row{display:flex;justify-content:center;gap:clamp(8px,2vw,12px);margin-top:2px;}
+.bonus-btn{
+  background:#1a0a3a;border:1.5px solid #9966ff;
+  border-radius:clamp(12px,2vw,16px);
+  padding:clamp(10px,2vw,14px) clamp(12px,2vw,16px);
+  cursor:pointer;transition:transform 0.15s;
+  display:flex;align-items:center;gap:8px;flex:1;
+}
+.bonus-btn:hover:not(.locked){transform:scale(1.03);border-color:#ffaaff;}
+.bonus-btn.locked{opacity:0.3;cursor:default;}
+.boss-btn{
+  background:#1a0010;border:1.5px solid #ff44aa;
+  border-radius:clamp(12px,2vw,16px);
+  padding:clamp(10px,2vw,14px) clamp(12px,2vw,16px);
+  cursor:pointer;transition:transform 0.15s;
+  display:flex;align-items:center;gap:8px;flex:1;
+}
+.boss-btn:hover:not(.locked){transform:scale(1.03);border-color:#ff88cc;}
+.boss-btn.locked{opacity:0.3;cursor:default;}
+.bonus-label{font-size:clamp(13px,2.3vw,16px);color:#ddaaff;}
+.bonus-label small{display:block;font-size:clamp(11px,2vw,13px);color:#9966ff;}
+.boss-label{font-size:clamp(13px,2.3vw,16px);color:#ffaacc;}
+.boss-label small{display:block;font-size:clamp(11px,2vw,13px);color:#ff44aa;}
+
+/* ===== GAME ===== */
+#game-screen{padding:clamp(12px,2.5vw,18px);display:none;}
+.game-header{display:flex;align-items:center;gap:8px;margin-bottom:clamp(10px,2vw,14px);}
+.home-btn{
+  background:#1a1a4a;border:1.5px solid #334;border-radius:8px;
+  color:white;padding:clamp(5px,1vw,8px) clamp(8px,1.5vw,12px);
+  cursor:pointer;font-size:clamp(16px,3vw,20px);line-height:1;flex-shrink:0;
+}
+.home-btn:hover{border-color:#bbd4ff;background:#2a2a5a;}
+.stage-info{flex:1;}
+.stage-name{font-size:clamp(14px,2.8vw,18px);color:#ffe066;}
+.stage-op{font-size:clamp(13px,2.2vw,15px);color:#bbd4ff;}
+.heart-row{font-size:clamp(14px,2.5vw,18px);letter-spacing:1px;flex-shrink:0;}
+
+.fuel-section{margin-bottom:clamp(10px,2vw,14px);}
+.fuel-label{font-size:clamp(13px,2.2vw,15px);color:#bbd4ff;margin-bottom:4px;}
+.fuel-cells{display:flex;gap:clamp(4px,1vw,7px);height:clamp(16px,3vw,22px);align-items:center;}
+.fuel-cell{flex:1;height:clamp(12px,2.5vw,16px);border-radius:8px;background:#1e1e3a;border:1px solid #3a3a6a;transition:background 0.3s,box-shadow 0.3s;}
+.fuel-cell.filled{background:#ffcc00;box-shadow:0 0 8px #ffcc0088;}
+.fuel-count{font-size:clamp(13px,2.2vw,15px);color:#ffcc00;text-align:right;margin-top:3px;}
+
+/* 행성 영역 */
+.planet-display{
+  display:flex;align-items:center;gap:clamp(10px,2vw,16px);
+  padding:clamp(12px,2.5vw,16px);
+  border-radius:clamp(12px,2vw,16px);
+  margin-bottom:clamp(10px,2vw,14px);
+  background:#0d0d2a;
+}
+.planet-big{
+  font-size:clamp(44px,8vw,60px);line-height:1;flex-shrink:0;
+  animation:floatPlanet 3s ease-in-out infinite;display:inline-block;
+}
+@keyframes floatPlanet{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.alien-bubble{
+  position:relative;border-radius:12px;
+  padding:clamp(8px,1.5vw,12px) clamp(11px,2vw,15px);
+  font-size:clamp(14px,2.5vw,16px);line-height:1.6;
+  display:inline-block;
+}
+.alien-bubble::before{content:'';position:absolute;left:-9px;top:50%;transform:translateY(-50%);border-top:8px solid transparent;border-bottom:8px solid transparent;}
+.alien-bubble::after{content:'';position:absolute;left:-7px;top:50%;transform:translateY(-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;}
+
+/* 행성별 말풍선 색상 */
+.bubble-sun{background:#2a1800;border:1px solid #5a3800;color:#ffd699;}
+.bubble-sun::before{border-right:9px solid #5a3800;}.bubble-sun::after{border-right:8px solid #2a1800;}
+.bubble-mercury{background:#1e1e1e;border:1px solid #404040;color:#cccccc;}
+.bubble-mercury::before{border-right:9px solid #404040;}.bubble-mercury::after{border-right:8px solid #1e1e1e;}
+.bubble-venus{background:#221a00;border:1px solid #4a3a00;color:#ffdd88;}
+.bubble-venus::before{border-right:9px solid #4a3a00;}.bubble-venus::after{border-right:8px solid #221a00;}
+.bubble-mars{background:#220800;border:1px solid #5a1800;color:#ffaa88;}
+.bubble-mars::before{border-right:9px solid #5a1800;}.bubble-mars::after{border-right:8px solid #220800;}
+.bubble-jupiter{background:#221000;border:1px solid #5a2800;color:#ffcc88;}
+.bubble-jupiter::before{border-right:9px solid #5a2800;}.bubble-jupiter::after{border-right:8px solid #221000;}
+.bubble-saturn{background:#1e1800;border:1px solid #4a3a00;color:#eecc66;}
+.bubble-saturn::before{border-right:9px solid #4a3a00;}.bubble-saturn::after{border-right:8px solid #1e1800;}
+.bubble-uranus{background:#001828;border:1px solid #003a5a;color:#88ccff;}
+.bubble-uranus::before{border-right:9px solid #003a5a;}.bubble-uranus::after{border-right:8px solid #001828;}
+.bubble-neptune{background:#00102a;border:1px solid #002a5a;color:#88aaff;}
+.bubble-neptune::before{border-right:9px solid #002a5a;}.bubble-neptune::after{border-right:8px solid #00102a;}
+.bubble-boss{background:#150022;border:1px solid #3a0055;color:#dd88ff;}
+.bubble-boss::before{border-right:9px solid #3a0055;}.bubble-boss::after{border-right:8px solid #150022;}
+.bubble-bonus{background:#0a0a22;border:1px solid #2a2a66;color:#aaaaff;}
+.bubble-bonus::before{border-right:9px solid #2a2a66;}.bubble-bonus::after{border-right:8px solid #0a0a22;}
+
+/* 문제 박스 */
+.question-box{
+  background:#0a1428;border:2px solid #2244aa;
+  border-radius:clamp(12px,2vw,16px);
+  padding:clamp(12px,2.5vw,16px);
+  margin-bottom:clamp(8px,1.5vw,12px);text-align:center;
+}
+.question-text{font-size:clamp(26px,5vw,34px);color:white;letter-spacing:2px;}
+
+/* 정답 입력창 — 시선 집중 강조 */
+.answer-section{margin-bottom:clamp(6px,1.2vw,10px);}
+.answer-display{
+  background:#111830;
+  border:2.5px solid #6688dd;
+  box-shadow:0 0 12px #4466cc44, inset 0 0 8px #1a2a4a;
+  border-radius:clamp(8px,1.5vw,12px);
+  padding:clamp(10px,2vw,14px);
+  text-align:center;
+  font-size:clamp(24px,4.5vw,30px);
+  color:#ffe066;
+  min-height:clamp(48px,8vw,58px);
+  letter-spacing:3px;
+  margin-bottom:clamp(6px,1.2vw,10px);
+  transition:border-color 0.2s,background 0.2s,box-shadow 0.2s;
+}
+.answer-display.correct{border-color:#44ff88;background:#0a2818;box-shadow:0 0 16px #44ff8844;}
+.answer-display.wrong{border-color:#ff4444;background:#2a0808;box-shadow:0 0 12px #ff444433;animation:shake 0.3s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* 키패드 — 버튼 크게, 여백 충분히 */
+.numpad{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:clamp(6px,1.5vw,10px);
+}
+.num-btn{
+  background:#1e1e4a;border:1.5px solid #3a3a6a;
+  border-radius:clamp(8px,1.5vw,12px);
+  color:white;font-family:inherit;
+  font-size:clamp(18px,3.5vw,24px);
+  padding:clamp(14px,3vw,20px) clamp(4px,1vw,8px);
+  cursor:pointer;transition:transform 0.1s,background 0.1s;
+  line-height:1;
+}
+.num-btn:hover{background:#2a2a5a;border-color:#6677cc;}
+.num-btn:active{transform:scale(0.93);background:#2a2a6a;}
+
+/* 삭제 버튼 — 선명한 붉은빛 */
+.num-btn.del{
+  background:#3a1a1a;
+  border-color:#aa4444;
+  color:#ff8888;
+  font-size:clamp(14px,2.5vw,17px);
+}
+.num-btn.del:hover{background:#4a2020;border-color:#cc5555;}
+
+/* 입력 버튼 — 선명한 초록빛 */
+.num-btn.enter{
+  background:#0d3a0d;
+  border-color:#44aa44;
+  color:#88ff88;
+  font-size:clamp(14px,2.5vw,17px);
+}
+.num-btn.enter:hover{background:#1a4a1a;border-color:#55cc55;}
+
+/* ===== RESULT ===== */
+#result-screen{padding:clamp(16px,3vw,24px);display:none;text-align:center;}
+.result-emoji{font-size:clamp(48px,8vw,62px);animation:bounce 0.6s ease;display:inline-block;}
+@keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.result-title{font-size:clamp(18px,3.5vw,24px);color:#ffe066;margin:8px 0 5px;}
+.result-msg{font-size:clamp(14px,2.5vw,16px);color:#bbd4ff;margin-bottom:clamp(12px,2vw,16px);line-height:1.6;}
+.result-stars{font-size:clamp(24px,4vw,30px);margin-bottom:clamp(12px,2vw,16px);}
+.result-stats{background:#0d0d2a;border-radius:clamp(10px,2vw,14px);padding:clamp(10px,2vw,14px);margin-bottom:clamp(12px,2vw,16px);border:1px solid #1a1a3a;}
+.stat-row{display:flex;justify-content:space-between;font-size:clamp(14px,2.5vw,16px);padding:5px 0;border-bottom:1px solid #1a1a3a;}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{color:#bbd4ff;}.stat-val{color:#ffe066;}
+.result-btns{display:flex;gap:clamp(6px,1.5vw,10px);align-items:stretch;}
+.rbtn{
+  flex:1;background:#1a1a4a;border:1.5px solid #334;
+  border-radius:clamp(8px,1.5vw,12px);color:white;font-family:inherit;
+  font-size:clamp(14px,2.5vw,16px);padding:clamp(10px,2vw,14px) 8px;
+  cursor:pointer;transition:background 0.15s;
+}
+.rbtn:hover{background:#2a2a6a;}
+.rbtn.primary{background:#0d3a00;border-color:#3a7a00;color:#aaff55;}
+.rbtn.primary:hover{background:#1a5000;}
+.rbtn.home-result{
+  background:#1a1a4a;border-color:#334;
+  font-size:clamp(16px,3vw,20px);
+  padding:clamp(10px,2vw,14px) clamp(12px,2vw,16px);
+  flex:0 0 auto;
+}
+.rbtn.home-result:hover{background:#2a2a6a;border-color:#bbd4ff;}
+
+/* ===== LAUNCH ===== */
+#launch-screen{display:none;text-align:center;padding:clamp(60px,12vw,100px) 20px;}
+.launch-rocket{font-size:clamp(48px,8vw,62px);animation:launch-fly 2s forwards;display:inline-block;}
+@keyframes launch-fly{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.2)}100%{transform:translateY(-100px) scale(0.3);opacity:0}}
+.launch-msg{font-size:clamp(18px,3.5vw,22px);color:#ffe066;margin-top:14px;}
+.launch-sub{font-size:clamp(12px,2vw,14px);color:#bbd4ff;margin-top:6px;}
+
+/* ===== BADGE MODAL ===== */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.82);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
+.badge-modal{background:#0d0d2a;border:1.5px solid #2a2a5a;border-radius:20px;width:92%;max-width:440px;max-height:90vh;overflow-y:auto;padding:20px;}
+.badge-modal-header{text-align:center;margin-bottom:14px;}
+.badge-modal-title{font-size:clamp(17px,3vw,21px);color:#ffe066;margin-bottom:4px;}
+.badge-modal-sub{font-size:clamp(11px,2vw,13px);color:#bbd4ff;}
+.badge-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px;}
+.badge-slot{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.badge-star-wrap{position:relative;width:80%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;}
+.badge-star{width:100%;height:100%;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);transition:transform 0.2s;}
+.badge-star.locked{background:#2a2a4a;}
+.badge-star.unlocked{animation:star-pop 0.4s ease;}
+@keyframes star-pop{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.badge-lock{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;line-height:1;pointer-events:none;}
+.badge-name{font-size:8px;color:#bbd4ff;text-align:center;line-height:1.2;word-break:keep-all;margin-top:1px;}
+.badge-name.unlocked{color:#ffe066;}
+.modal-close{width:100%;background:#1a1a4a;border:1.5px solid #334;border-radius:10px;color:white;font-family:inherit;font-size:15px;padding:10px;cursor:pointer;margin-top:4px;}
+.modal-close:hover{background:#2a2a6a;}
+
+/* ===== BADGE POPUP ===== */
+.badge-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0d0d2a;border:2px solid #ffe066;border-radius:16px;padding:24px 20px;z-index:2000;text-align:center;min-width:220px;animation:popup-in 0.4s ease;}
+@keyframes popup-in{from{transform:translate(-50%,-50%) scale(0.5);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.popup-star{width:64px;height:64px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);margin:0 auto 10px;}
+.popup-title{font-size:18px;color:#ffe066;margin-bottom:4px;}
+.popup-msg{font-size:13px;color:#bbd4ff;margin-bottom:12px;}
+.popup-btns{display:flex;gap:8px;justify-content:center;}
+.popup-btn{background:#1a1a4a;border:1.5px solid #ffe066;border-radius:8px;color:#ffe066;font-family:inherit;font-size:13px;padding:7px 16px;cursor:pointer;}
+.popup-btn.close-btn{border-color:#334;color:#bbd4ff;}
+.popup-btn.close-btn:hover{background:#2a2a5a;}
+
+/* ===== PARTICLES ===== */
+.particle{position:fixed;pointer-events:none;font-size:18px;animation:particle-fly 1.2s forwards;z-index:9999;}
+@keyframes particle-fly{0%{transform:translateY(0) scale(1) rotate(0deg);opacity:1;}100%{transform:translateY(-130px) scale(0.4) rotate(30deg);opacity:0;}}
+</style>
+</head>
+<body>
+<div id="game-root">
+  <div class="stars-bg" id="stars-bg"></div>
+  <div id="map-screen"></div>
+  <div id="game-screen"></div>
+  <div id="result-screen"></div>
+  <div id="launch-screen"></div>
+</div>
+<script>
+const GAME_KEY='smg2';
+const STAGES=[
+  {id:0,name:'태양',emoji:'☀️',op:'덧셈',desc:'한 자리 올림 덧셈',alien:'안녕! 태양이야!\n도전하는 게 멋진 거야!',bubble:'bubble-sun',type:'sun'},
+  {id:1,name:'수성',emoji:'🪨',op:'뺄셈',desc:'한 자리 뺄셈',alien:'수성에 온 걸 환영해!\n열심히 생각하는 모습이 정말 멋져!',bubble:'bubble-mercury',type:'mercury'},
+  {id:2,name:'금성',emoji:'🌕',op:'덧셈',desc:'두 자리 덧셈',alien:'금성 구름 속 문제야!\n천천히 생각해봐, 노력이 쌓이고 있어!',bubble:'bubble-venus',type:'venus'},
+  {id:3,name:'화성',emoji:'🔴',op:'뺄셈',desc:'두 자리 뺄셈',alien:'붉은 화성!\n계속 도전하는 게 진짜 용기야!',bubble:'bubble-mars',type:'mars'},
+  {id:4,name:'목성',emoji:'🟠',op:'곱셈',desc:'구구단 2~9단',alien:'목성은 태양계 최강!\n구구단, 꾸준히 하면 반드시 늘어!',bubble:'bubble-jupiter',type:'jupiter'},
+  {id:5,name:'토성',emoji:'🪐',op:'쉬운 곱셈',desc:'10·20·50 곱셈',alien:'토성 고리처럼 멋진 너!\n큰 숫자도 패턴을 찾으면 쉬워져!',bubble:'bubble-saturn',type:'saturn'},
+  {id:6,name:'천왕성',emoji:'🔵',op:'나눗셈',desc:'구구단 나눗셈',alien:'나눗셈은 곱셈 거꾸로야!\n이미 알고 있는 거야, 믿어봐!',bubble:'bubble-uranus',type:'uranus'},
+  {id:7,name:'해왕성',emoji:'🌊',op:'혼합',desc:'전체 혼합 연산',alien:'여기까지 온 것 자체가 대단해!\n모든 연산 총출동~!',bubble:'bubble-neptune',type:'neptune'},
+];
+const BOSS={id:8,name:'블랙홀',emoji:'🌀',op:'보스',desc:'최종 보스!',alien:'감히 블랙홀에 도전?!\n여기까지 온 너는 이미 우주 영웅이야!',bubble:'bubble-boss',type:'boss',isBoss:true};
+const BONUS={id:9,name:'명왕성',emoji:'🌟',op:'보너스',desc:'자유로운 탐험가!',alien:'태양계 밖이라 더 자유롭고\n넓은 우주를 탐험 중이야! 같이 가자!',bubble:'bubble-bonus',type:'bonus'};
+
+const BADGE_COLORS=[
+  {name:'빨강',color:'#E74C3C'},{name:'주황',color:'#E67E22'},{name:'노랑',color:'#F1C40F'},
+  {name:'초록',color:'#2ECC71'},{name:'파랑',color:'#3498DB'},{name:'남색',color:'#2C3E8C'},
+  {name:'보라',color:'#9B59B6'},{name:'핑크',color:'#FF69B4'},{name:'살구',color:'#FFAC89'},
+  {name:'레몬',color:'#FFF44F'},{name:'민트',color:'#3EB489'},{name:'하늘',color:'#87CEEB'},
+  {name:'라벤더',color:'#B57EDC'},{name:'코랄',color:'#FF6B6B'},{name:'은색',color:'#A8A9AD'},
+  {name:'흰색',color:'#E8E8E8'},{name:'검정',color:'#2C2C2C'},{name:'베이지',color:'#C8A98A'},
+  {name:'카키',color:'#8B8645'},{name:'와인',color:'#722F37'},{name:'금색',color:'#FFD700'},
+  {name:'형광초록',color:'#39FF14'},{name:'형광노랑',color:'#CCCC00'},{name:'산호',color:'#FF7F50'},
+  {name:'하늘색',color:'#00BFFF'},{name:'자주',color:'#9B1B30'},{name:'올리브',color:'#808000'},
+  {name:'청록',color:'#008080'},{name:'골드',color:'#DAA520'},{name:'실버',color:'#C0C0C0'},
+  {name:'로즈핑크',color:'#FF007F'},{name:'펄',color:'#D4B896'},{name:'브론즈',color:'#CD7F32'},
+  {name:'플래티넘',color:'#9E9E9E'},{name:'다이아',color:'#7EC8E3'},{name:'벚꽃',color:'#FFB7C5'},
+  {name:'코발트',color:'#0047AB'},{name:'단풍',color:'#CC4400'},{name:'눈꽃',color:'#B8D4E8'},
+  {name:'물빛',color:'#00CED1'},{name:'햇살',color:'#FFE066'},{name:'인디고',color:'#4B0082'},
+  {name:'딥핑크',color:'#FF1493'},{name:'청옥',color:'#0D98BA'},{name:'다크오렌지',color:'#FF8C00'},
+  {name:'슬레이트',color:'#708090'},{name:'포레스트',color:'#228B22'},{name:'크림슨',color:'#DC143C'},
+  {name:'무지개',color:'conic'},
+];
+
+let gs={progress:{},currentStage:null,question:null,answer:'',hearts:3,correct:0,wrong:0,fuelFilled:0,fuelGoal:3,questionIndex:0,total:0,dailyCount:0,lastDate:'',badges:[]};
+
+function loadStorage(){try{gs.progress=JSON.parse(localStorage.getItem(GAME_KEY+'_progress')||'{}');gs.total=parseInt(localStorage.getItem(GAME_KEY+'_total')||'0');gs.lastDate=localStorage.getItem(GAME_KEY+'_date')||'';gs.dailyCount=parseInt(localStorage.getItem(GAME_KEY+'_daily')||'0');gs.badges=JSON.parse(localStorage.getItem(GAME_KEY+'_badges')||'[]');}catch(e){}}
+function saveStorage(){try{localStorage.setItem(GAME_KEY+'_progress',JSON.stringify(gs.progress));localStorage.setItem(GAME_KEY+'_total',gs.total);localStorage.setItem(GAME_KEY+'_date',gs.lastDate);localStorage.setItem(GAME_KEY+'_daily',gs.dailyCount);localStorage.setItem(GAME_KEY+'_badges',JSON.stringify(gs.badges));}catch(e){}}
+function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+// ===== 배경 별: body 전체에 고르게 분산 =====
+function makeStars(){
+  const bg=document.getElementById('stars-bg');
+  // 화면 크기에 비례해서 별 수 결정
+  const count=Math.min(120,Math.floor(window.innerWidth*window.innerHeight/8000));
+  for(let i=0;i<count;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=Math.random()*2.2+0.8;
+    // 화면 전체에 고르게: 격자 + 랜덤 오프셋
+    const col=i%10, row=Math.floor(i/10);
+    const x=(col/10*100)+(Math.random()*10);
+    const y=(row/(Math.ceil(count/10))*100)+(Math.random()*10);
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.min(y,99)}%;left:${Math.min(x,99)}%;animation-delay:${Math.random()*3}s;animation-duration:${1.5+Math.random()*3}s`;
+    bg.appendChild(s);
+  }
+}
+
+// ===== 우주 오브젝트: 즉시 시작, 최대 3개 동시, 8~18초 간격 =====
+const FLOATERS=['🚀','👾','🌠','💫','🛸','⭐','🌙','🪐','☄️'];
+let activeFloaters=0;
+
+function spawnFloater(){
+  if(activeFloaters>=3)return;
+  activeFloaters++;
+  const el=document.createElement('div');
+  const fromSide=Math.random()>0.3;
+  const dur=14+Math.random()*10; // 14~24초, 이전보다 빠름
+  el.textContent=FLOATERS[Math.floor(Math.random()*FLOATERS.length)];
+  el.style.fontSize=(13+Math.random()*12)+'px';
+  el.style.opacity='0';
+  if(fromSide){
+    el.className='floater';
+    el.style.top=(8+Math.random()*84)+'vh';
+    el.style.left='-70px';
+  }else{
+    el.className='floater floater-down';
+    el.style.left=(5+Math.random()*90)+'vw';
+    el.style.top='-55px';
+  }
+  el.style.animationDuration=dur+'s';
+  el.style.animationDelay='0s';
+  document.getElementById('stars-bg').appendChild(el);
+  setTimeout(()=>{el.remove();activeFloaters=Math.max(0,activeFloaters-1);},dur*1000+500);
+}
+
+function scheduleFloater(){
+  spawnFloater();
+  // 8~18초마다 — 이전(28~60초)보다 훨씬 자주
+  setTimeout(scheduleFloater,(8+Math.random()*10)*1000);
+}
+
+function starsFor(n){return '⭐'.repeat(n)+'☆'.repeat(3-n);}
+function showScreen(id){['map-screen','game-screen','result-screen','launch-screen'].forEach(s=>{document.getElementById(s).style.display=s===id?'block':'none';});}
+function r(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+function genQuestion(stage,qi){
+  const t=stage.type;let a,b,ans,op;
+  if(t==='sun'){do{a=r(1,9);b=r(1,9);}while(a+b<10);op='+';ans=a+b;}
+  else if(t==='mercury'){a=r(3,9);b=r(1,a-1);op='-';ans=a-b;}
+  else if(t==='venus'){
+    if(qi===0){do{a=r(10,49);b=r(10,49);}while((a%10)+(b%10)>=10||a+b>99);}
+    else if(qi===1){a=r(11,59);b=r(11,39);if(a+b>99)b=r(11,30);}
+    else{do{a=r(15,59);b=r(15,49);}while((a%10)+(b%10)<10||a+b>99);}
+    op='+';ans=a+b;
+  }else if(t==='mars'){
+    if(qi===0){do{a=r(20,99);b=r(10,a-10);}while((a%10)<(b%10)||a-b<10);}
+    else if(qi===1){a=r(30,99);b=r(11,a-5);if(a-b<5)b=r(10,20);}
+    else{do{a=r(31,99);b=r(12,a-1);}while((a%10)>=(b%10)||a-b<10);}
+    op='-';ans=a-b;
+  }else if(t==='jupiter'){a=r(2,9);b=r(1,9);op='×';ans=a*b;}
+  else if(t==='saturn'){const bases=[10,20,30,40,50];a=bases[Math.floor(Math.random()*bases.length)];b=r(2,9);op='×';ans=a*b;}
+  else if(t==='uranus'){const d=r(2,9),q=r(1,9);a=d*q;b=d;op='÷';ans=q;}
+  else{
+    const ops=['+','-','×','÷'];op=ops[Math.floor(Math.random()*ops.length)];
+    if(op==='+'){a=r(10,50);b=r(10,40);ans=a+b;}
+    else if(op==='-'){a=r(25,99);b=r(10,a-5);ans=a-b;}
+    else if(op==='×'){a=r(2,9);b=r(2,9);ans=a*b;}
+    else{const d=r(2,9),q=r(1,9);a=d*q;b=d;ans=q;}
+  }
+  return{op,a,b,ans,display:`${a} ${op} ${b} = ?`};
+}
+
+function renderMap(){
+  showScreen('map-screen');
+  const allMainCleared=STAGES.every((_,i)=>gs.progress[i]>=1);
+  const el=document.getElementById('map-screen');
+  const cells=STAGES.map((s,i)=>{
+    const prog=gs.progress[i]||0;const completed=prog>=1;const stars=prog?starsFor(prog):'';
+    return `<div class="planet-btn ${completed?'completed':''}" onclick="startStage(${i})">
+      ${completed?'<span class="check-icon">✓</span>':''}
+      <span class="planet-emoji">${s.emoji}</span>
+      <div class="planet-name">${s.name}</div>
+      <div class="planet-op">${s.op}</div>
+      <div class="planet-desc">${s.desc}</div>
+      ${stars?`<div class="star-row">${stars}</div>`:''}
+    </div>`;
+  }).join('');
+  const bossProg=gs.progress[8]||0;const bonusProg=gs.progress[9]||0;
+  el.innerHTML=`
+    <div class="map-header">
+      <div class="map-title" id="map-title" onclick="titleTap()" style="cursor:pointer;">🚀 똑똑 수학 우주</div>
+      <button class="badge-btn" onclick="showBadgeModal()">⭐ ${gs.badges.length}/49</button>
+    </div>
+    <div class="map-subtitle">우주를 탐험하며 수학 문제를 풀어보자!</div>
+    <div class="planet-grid">${cells}</div>
+    <div class="bonus-row">
+      <div class="boss-btn ${allMainCleared?'':'locked'}" onclick="${allMainCleared?'startBoss()':'bossTap()'}">
+        <span style="font-size:clamp(22px,4vw,28px)">🌀</span>
+        <div class="boss-label">블랙홀 보스<small>${allMainCleared?'잠금 해제!':'탐험 후 잠금해제'}</small>${bossProg?`<small>${starsFor(bossProg)}</small>`:''}</div>
+      </div>
+      <div class="bonus-btn ${allMainCleared?'':'locked'}" onclick="startBonus()">
+        <span style="font-size:clamp(22px,4vw,28px)">🌟</span>
+        <div class="bonus-label">명왕성 보너스<small>${allMainCleared?'잠금 해제!':'탐험 후 잠금해제'}</small>${bonusProg?`<small>${starsFor(bonusProg)}</small>`:''}</div>
+      </div>
+    </div>
+    <div class="maker-info">🚀 엄마가 <span class="maker-highlight">루인이 & 아인이</span>가 좋아하는 우주로 만든 수학 게임 ⭐</div>
+  `;
+}
+
+// ===== 이스터에그 1: 타이틀 3번 탭 =====
+let titleTapCount=0, titleTapTimer=null;
+function titleTap(){
+  titleTapCount++;
+  clearTimeout(titleTapTimer);
+  titleTapTimer=setTimeout(()=>{titleTapCount=0;},1200);
+  if(titleTapCount>=3){
+    titleTapCount=0;
+    showEasterEgg();
+  }
+}
+function showEasterEgg(){
+  for(let i=0;i<20;i++){
+    setTimeout(()=>spawnParticles(['🌟','⭐','💫','✨','🚀','💖'],3),i*60);
+  }
+  const pop=document.createElement('div');
+  pop.className='easter-popup';pop.id='easter-pop';
+  pop.innerHTML=`
+    <span class="easter-emoji">🚀</span>
+    <div class="easter-msg">
+      <span class="name">루인이, 아인이</span><br>
+      사랑해! 💖<br>
+      엄마가 우주선을 띄워줄게!🌌
+    </div>
+  `;
+  pop.onclick=()=>closeEaster();
+  document.body.appendChild(pop);
+  setTimeout(()=>closeEaster(),3500);
+}
+function closeEaster(){const p=document.getElementById('easter-pop');if(p)p.remove();}
+
+// ===== 이스터에그 2: 잠긴 블랙홀 3번 탭 =====
+let bossTapCount=0, bossTapTimer=null;
+function bossTap(){
+  bossTapCount++;
+  clearTimeout(bossTapTimer);
+  bossTapTimer=setTimeout(()=>{bossTapCount=0;},1200);
+  if(bossTapCount>=3){
+    bossTapCount=0;
+    showBlackholeEffect();
+  }
+}
+function showBlackholeEffect(){
+  const el=document.createElement('div');
+  el.className='blackhole-effect';
+  el.innerHTML=`<div class="bh-vortex">🌀</div><div class="bh-text">빨려 들어가고 있어...!</div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2500);
+}
+
+function startStage(idx){gs.currentStage={...STAGES[idx]};gs.hearts=99;gs.correct=0;gs.wrong=0;gs.fuelFilled=0;gs.fuelGoal=3;gs.answer='';gs.questionIndex=0;renderGame();}
+function startBoss(){if(!STAGES.every((_,i)=>gs.progress[i]>=1))return;gs.currentStage={...BOSS};gs.hearts=3;gs.correct=0;gs.wrong=0;gs.fuelFilled=0;gs.fuelGoal=3;gs.answer='';gs.questionIndex=0;renderGame();}
+function startBonus(){if(!STAGES.every((_,i)=>gs.progress[i]>=1))return;gs.currentStage={...BONUS};gs.hearts=99;gs.correct=0;gs.wrong=0;gs.fuelFilled=0;gs.fuelGoal=3;gs.answer='';gs.questionIndex=0;renderGame();}
+
+function renderGame(){
+  showScreen('game-screen');
+  gs.question=genQuestion(gs.currentStage,gs.questionIndex);
+  const s=gs.currentStage;
+  const el=document.getElementById('game-screen');
+  const heartsHtml=s.isBoss?'❤️'.repeat(gs.hearts)+'🖤'.repeat(3-gs.hearts):'';
+  const bubbleText=s.alien.replace(/\n/g,'<br>');
+  el.innerHTML=`
+    <div class="game-header">
+      <button class="home-btn" onclick="renderMap()" title="기지로 돌아가기">🚀</button>
+      <div class="stage-info">
+        <div class="stage-name">${s.emoji} ${s.name}</div>
+        <div class="stage-op" id="stage-op">${s.desc} · ${gs.fuelFilled+1}/3문제</div>
+      </div>
+      ${s.isBoss?`<div class="heart-row" id="heart-row">${heartsHtml}</div>`:''}
+    </div>
+    <div class="fuel-section">
+      <div class="fuel-label">⛽ 연료 게이지</div>
+      <div class="fuel-cells" id="fuel-cells"></div>
+      <div class="fuel-count" id="fuel-count">${gs.fuelFilled}/3 충전됨</div>
+    </div>
+    <div class="planet-display">
+      <span class="planet-big">${s.emoji}</span>
+      <div class="alien-bubble ${s.bubble}" id="alien-speech">${bubbleText}</div>
+    </div>
+    <div class="question-box">
+      <div class="question-text" id="question-text">${gs.question.display}</div>
+    </div>
+    <div class="answer-section">
+      <div class="answer-display" id="answer-display">?</div>
+      <div class="numpad">
+        ${[7,8,9,'삭제',4,5,6,'',1,2,3,'',0,'','','입력'].map(n=>{
+          if(n==='')return '<div></div>';
+          const cls=n==='삭제'?'num-btn del':n==='입력'?'num-btn enter':'num-btn';
+          return `<button class="${cls}" onclick="numPress('${n}')">${n}</button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  updateFuel();
+}
+
+function updateFuel(){
+  const cells=document.getElementById('fuel-cells');const count=document.getElementById('fuel-count');const so=document.getElementById('stage-op');
+  if(!cells)return;
+  let html='';for(let i=0;i<gs.fuelGoal;i++)html+=`<div class="fuel-cell ${i<gs.fuelFilled?'filled':''}"></div>`;
+  cells.innerHTML=html;
+  if(count)count.textContent=`${gs.fuelFilled}/3 충전됨`;
+  if(so)so.textContent=`${gs.currentStage.desc} · ${Math.min(gs.fuelFilled+1,3)}/3문제`;
+}
+
+const CORRECT_MSGS=['잘했어! 연료 충전! ⛽','정답! 계속 이 기세야!','맞아! 열심히 하는 게 느껴져!','훌륭해! 포기하지 않았지?','딩동댕! 노력이 빛났어!','완벽해! 도전하는 모습이 멋져!'];
+const WRONG_MSGS=['아깝다! 다시 생각해봐~','틀렸지만 괜찮아! 다시 도전!','천천히 생각해봐, 할 수 있어!','조금 더 집중해봐! 응원할게!','실수해도 괜찮아, 다시 해봐!'];
+
+function numPress(n){
+  if(n==='삭제'){gs.answer=gs.answer.slice(0,-1);}
+  else if(n==='입력'){submitAnswer();return;}
+  else{if(gs.answer.length<6)gs.answer+=n;}
+  const disp=document.getElementById('answer-display');
+  if(disp)disp.textContent=gs.answer||'?';
+}
+
+function submitAnswer(){
+  if(!gs.answer)return;
+  const ans=parseInt(gs.answer);const correct=ans===gs.question.ans;
+  const disp=document.getElementById('answer-display');const speech=document.getElementById('alien-speech');
+  if(correct){
+    disp.classList.add('correct');gs.correct++;gs.fuelFilled++;
+    spawnParticles(['⭐','✨','🎉','💫']);playSound('correct');
+    if(speech)speech.innerHTML=CORRECT_MSGS[Math.floor(Math.random()*CORRECT_MSGS.length)];
+    setTimeout(()=>{
+      disp.classList.remove('correct');
+      if(gs.fuelFilled>=gs.fuelGoal){handleStageComplete();}
+      else{
+        gs.answer='';disp.textContent='?';gs.questionIndex++;
+        gs.question=genQuestion(gs.currentStage,gs.questionIndex);
+        const qt=document.getElementById('question-text');if(qt)qt.textContent=gs.question.display;
+        if(speech)speech.innerHTML=gs.currentStage.alien.replace(/\n/g,'<br>');
+        updateFuel();
+      }
+    },700);
+  }else{
+    disp.classList.add('wrong');gs.wrong++;playSound('wrong');
+    if(gs.currentStage.isBoss){
+      gs.hearts--;
+      const hr=document.getElementById('heart-row');
+      if(hr)hr.textContent='❤️'.repeat(Math.max(0,gs.hearts))+'🖤'.repeat(3-Math.max(0,gs.hearts));
+      if(gs.hearts<=0){setTimeout(()=>showBossDefeat(),600);return;}
+    }
+    if(speech)speech.innerHTML=WRONG_MSGS[Math.floor(Math.random()*WRONG_MSGS.length)];
+    setTimeout(()=>{disp.classList.remove('wrong');gs.answer='';disp.textContent='?';},500);
+  }
+}
+
+function handleStageComplete(){
+  const sid=gs.currentStage.id;
+  const total=gs.correct+gs.wrong;const acc=total>0?Math.round(gs.correct/total*100):100;const stars=acc>=100?3:acc>=67?2:1;
+  if(!gs.progress[sid]||stars>gs.progress[sid]){gs.progress[sid]=stars;saveStorage();}
+  const allMainCleared=STAGES.every((_,i)=>gs.progress[i]>=1);
+  if(allMainCleared){checkBadgeUnlock();}
+  launchRocket();
+}
+
+function checkBadgeUnlock(){
+  const today=getTodayStr();
+  if(gs.lastDate!==today){gs.dailyCount=0;gs.lastDate=today;}
+  if(gs.dailyCount>=1)return;
+  const nextIdx=gs.badges.length;if(nextIdx>=BADGE_COLORS.length)return;
+  gs.dailyCount++;gs.badges.push(nextIdx);saveStorage();
+  setTimeout(()=>showBadgeUnlockPopup(nextIdx),800);
+}
+
+function getBadgeStarStyle(b,size){
+  if(b.color==='conic')return `background:conic-gradient(#E74C3C,#E67E22,#F1C40F,#2ECC71,#3498DB,#2C3E8C,#9B59B6,#E74C3C);width:${size}px;height:${size}px;`;
+  return `background:${b.color};width:${size}px;height:${size}px;`;
+}
+
+function showBadgeModal(){
+  const nextIdx=gs.badges.length;
+  const subText=nextIdx>=BADGE_COLORS.length?'모든 뱃지 달성! 🎉':'모든 행성을 클리어하고 날마다 1개씩 획득해요!';
+  let grid='';
+  for(let i=0;i<BADGE_COLORS.length;i++){
+    const b=BADGE_COLORS[i];const unlocked=gs.badges.includes(i);const starStyle=getBadgeStarStyle(b,32);
+    grid+=`<div class="badge-slot"><div class="badge-star-wrap"><div class="badge-star ${unlocked?'unlocked':'locked'}" style="${unlocked?starStyle:''}"></div>${!unlocked?'<span class="badge-lock">🔒</span>':''}</div><div class="badge-name ${unlocked?'unlocked':''}">${unlocked?b.name:''}</div></div>`;
+  }
+  const modal=document.createElement('div');modal.className='modal-overlay';modal.id='badge-modal-overlay';
+  modal.innerHTML=`<div class="badge-modal"><div class="badge-modal-header"><div class="badge-modal-title">나의 우주 별 뱃지</div><div class="badge-modal-sub">${subText}</div></div><div class="badge-grid">${grid}</div><button class="modal-close" onclick="closeBadgeModal()">닫기</button></div>`;
+  document.body.appendChild(modal);
+}
+function closeBadgeModal(){const m=document.getElementById('badge-modal-overlay');if(m)m.remove();}
+
+function showBadgeUnlockPopup(idx){
+  const b=BADGE_COLORS[idx];const starStyle=getBadgeStarStyle(b,64);
+  const popup=document.createElement('div');popup.className='badge-popup';popup.id='badge-popup';
+  popup.innerHTML=`<div class="popup-star" style="${starStyle}"></div><div class="popup-title">${b.name} 별 획득!</div><div class="popup-msg">우주 탐험 뱃지가 하나 늘었어! 멋져! 🌟</div><div class="popup-btns"><button class="popup-btn close-btn" onclick="closeBadgePopup()">확인</button><button class="popup-btn" onclick="closeBadgePopupAndShow()">내 뱃지 보기</button></div>`;
+  document.body.appendChild(popup);
+  const bb=document.querySelector('.badge-btn');if(bb)bb.textContent=`⭐ ${gs.badges.length}/49`;
+}
+function closeBadgePopup(){const p=document.getElementById('badge-popup');if(p)p.remove();}
+function closeBadgePopupAndShow(){closeBadgePopup();showBadgeModal();}
+
+function launchRocket(){
+  showScreen('launch-screen');const s=gs.currentStage;
+  document.getElementById('launch-screen').innerHTML=`<div class="launch-rocket">🚀</div><div class="launch-msg">${s.name} 클리어!</div><div class="launch-sub">${s.emoji} 연료 충전 완료! 발사!</div>`;
+  playSound('launch');setTimeout(()=>showResult(),2000);
+}
+
+function showResult(){
+  const s=gs.currentStage;const total=gs.correct+gs.wrong;
+  const acc=total>0?Math.round(gs.correct/total*100):100;const stars=acc>=100?3:acc>=67?2:1;
+  const msgs=['오늘도 열심히 도전했어! 정말 멋져! 🌟','포기하지 않고 끝까지 해낸 게 대단해! 🚀','노력이 쌓이고 있어! 계속 도전해봐! ⭐'];
+  const sid=s.id;
+  let nextBtn='';
+  if(sid>=0&&sid<=6){const next=STAGES[sid+1];nextBtn=`<button class="rbtn primary" onclick="startStage(${sid+1})">다음: ${next.emoji} ${next.name} →</button>`;}
+  else if(sid===7){const allMainCleared=STAGES.every((_,i)=>gs.progress[i]>=1);nextBtn=allMainCleared?`<button class="rbtn primary" onclick="startBoss()">블랙홀 도전! 🌀</button>`:`<button class="rbtn primary" onclick="renderMap()">기지로 돌아가기</button>`;}
+  else{nextBtn=`<button class="rbtn primary" onclick="renderMap()">기지로 돌아가기</button>`;}
+  showScreen('result-screen');
+  document.getElementById('result-screen').innerHTML=`
+    <div class="result-emoji">${stars===3?'🏆':stars===2?'🥈':'🥉'}</div>
+    <div class="result-title">${s.emoji} ${s.name} 클리어!</div>
+    <div class="result-msg">${msgs[stars-1]}</div>
+    <div class="result-stars">${starsFor(stars)}</div>
+    <div class="result-stats">
+      <div class="stat-row"><span class="stat-label">맞은 문제</span><span class="stat-val">${gs.correct}개</span></div>
+      <div class="stat-row"><span class="stat-label">틀린 문제</span><span class="stat-val">${gs.wrong}개</span></div>
+      <div class="stat-row"><span class="stat-label">정답률</span><span class="stat-val">${acc}%</span></div>
+    </div>
+    <div class="result-btns">
+      <button class="rbtn home-result" onclick="renderMap()" title="기지로 돌아가기">🚀</button>
+      <button class="rbtn" onclick="retryStage()">다시 하기</button>
+      ${nextBtn}
+    </div>
+  `;
+  spawnParticles(['🎉','⭐','✨','🚀','💫'],14);
+}
+
+function retryStage(){const s=gs.currentStage;if(s.id===8)startBoss();else if(s.id===9)startBonus();else startStage(s.id);}
+
+function showBossDefeat(){
+  showScreen('result-screen');
+  document.getElementById('result-screen').innerHTML=`
+    <div class="result-emoji">💫</div>
+    <div class="result-title">아깝다! 다시 도전!</div>
+    <div class="result-msg">블랙홀이 강하지? 도전하는 것 자체가 이미 대단해! 다시 해봐! 💪</div>
+    <div class="result-stats">
+      <div class="stat-row"><span class="stat-label">맞은 문제</span><span class="stat-val">${gs.correct}개</span></div>
+      <div class="stat-row"><span class="stat-label">틀린 문제</span><span class="stat-val">${gs.wrong}개</span></div>
+    </div>
+    <div class="result-btns">
+      <button class="rbtn home-result" onclick="renderMap()" title="기지로 돌아가기">🚀</button>
+      <button class="rbtn" onclick="startBoss()">다시 도전!</button>
+      <button class="rbtn primary" onclick="renderMap()">기지로 돌아가기</button>
+    </div>
+  `;
+}
+
+function spawnParticles(emojis,count=8){
+  const root=document.getElementById('game-root');const rect=root.getBoundingClientRect();
+  const cx=rect.left+rect.width/2;const cy=rect.top+rect.height*0.45;const spread=rect.width*0.5;
+  for(let i=0;i<count;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');p.className='particle';
+      p.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+      p.style.left=(cx-spread/2+Math.random()*spread)+'px';
+      p.style.top=(cy+Math.random()*30)+'px';
+      p.style.animationDuration=(0.8+Math.random()*0.7)+'s';
+      document.body.appendChild(p);setTimeout(()=>p.remove(),1500);
+    },i*70);
+  }
+}
+
+function playSound(type){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    if(type==='correct'){o.type='sine';o.frequency.setValueAtTime(520,ctx.currentTime);o.frequency.setValueAtTime(660,ctx.currentTime+0.1);o.frequency.setValueAtTime(800,ctx.currentTime+0.2);g.gain.setValueAtTime(0.25,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);o.start();o.stop(ctx.currentTime+0.5);}
+    else if(type==='wrong'){o.type='sawtooth';o.frequency.setValueAtTime(220,ctx.currentTime);o.frequency.setValueAtTime(180,ctx.currentTime+0.1);g.gain.setValueAtTime(0.18,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);o.start();o.stop(ctx.currentTime+0.3);}
+    else if(type==='launch'){o.type='sine';o.frequency.setValueAtTime(300,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(900,ctx.currentTime+0.8);g.gain.setValueAtTime(0.25,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);o.start();o.stop(ctx.currentTime+1);}
+  }catch(e){}
+}
+
+loadStorage();
+makeStars();
+// 즉시 첫 번째 floater 등장, 이후 8~18초 간격
+scheduleFloater();
+renderMap();
+</script>
+</body>
+</html>
