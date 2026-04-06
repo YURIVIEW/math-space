@@ -422,7 +422,7 @@ const GAME_KEY='smg2';
 const STAGES=[
   {id:0,name:'태양',emoji:'☀️',op:'덧셈',desc:'한 자리 올림 덧셈',alien:'안녕! 태양이야!\n도전하는 게 멋진 거야!',bubble:'bubble-sun',type:'sun'},
   {id:1,name:'수성',emoji:'🪨',op:'뺄셈',desc:'한 자리 뺄셈',alien:'수성에 온 걸 환영해!\n열심히 생각하는 모습이 정말 멋져!',bubble:'bubble-mercury',type:'mercury'},
-  {id:2,name:'금성',emoji:'🌕',op:'덧셈',desc:'두 자리 덧셈',alien:'금성 구름 속 문제야!\n천천히 생각해봐, 노력이 쌓이고 있어!',bubble:'bubble-venus',type:'venus'},
+  {id:2,name:'금성',emoji:'🌕',op:'덧셈',desc:'한+두 자리 덧셈',alien:'금성 구름 속 문제야!\n천천히 생각해봐, 노력이 쌓이고 있어!',bubble:'bubble-venus',type:'venus'},
   {id:3,name:'화성',emoji:'🔴',op:'뺄셈',desc:'두 자리 뺄셈',alien:'붉은 화성!\n계속 도전하는 게 진짜 용기야!',bubble:'bubble-mars',type:'mars'},
   {id:4,name:'목성',emoji:'🟠',op:'곱셈',desc:'구구단 2~9단',alien:'목성은 태양계 최강!\n구구단, 꾸준히 하면 반드시 늘어!',bubble:'bubble-jupiter',type:'jupiter'},
   {id:5,name:'토성',emoji:'🪐',op:'쉬운 곱셈',desc:'10·20·50 곱셈',alien:'토성 고리처럼 멋진 너!\n큰 숫자도 패턴을 찾으면 쉬워져!',bubble:'bubble-saturn',type:'saturn'},
@@ -518,15 +518,28 @@ function genQuestion(stage,qi){
   if(t==='sun'){do{a=r(1,9);b=r(1,9);}while(a+b<10);op='+';ans=a+b;}
   else if(t==='mercury'){a=r(3,9);b=r(1,a-1);op='-';ans=a-b;}
   else if(t==='venus'){
-    if(qi===0){do{a=r(10,49);b=r(10,49);}while((a%10)+(b%10)>=10||a+b>99);}
-    else if(qi===1){a=r(11,59);b=r(11,39);if(a+b>99)b=r(11,30);}
-    else{do{a=r(15,59);b=r(15,49);}while((a%10)+(b%10)<10||a+b>99);}
+    if(qi===0){
+      // 1문: 한 자리 + 두 자리, 받아올림 없음
+      do{a=r(1,9);b=r(10,89);}while((a+(b%10))>=10||a+b>99);
+    }else if(qi===1){
+      // 2문: 한 자리 + 두 자리, 받아올림 있음
+      do{a=r(1,9);b=r(11,89);}while((a+(b%10))<10||a+b>99);
+    }else{
+      // 3문: 두 자리 + 두 자리, 받아올림 없음
+      do{a=r(10,49);b=r(10,49);}while((a%10)+(b%10)>=10||a+b>99);
+    }
     op='+';ans=a+b;
   }else if(t==='mars'){
-    if(qi===0){do{a=r(20,99);b=r(10,a-10);}while((a%10)<(b%10)||a-b<10);}
-    else if(qi===1){a=r(30,99);b=r(11,a-5);if(a-b<5)b=r(10,20);}
-    else{do{a=r(31,99);b=r(12,a-1);}while((a%10)>=(b%10)||a-b<10);}
-    op='-';ans=a-b;
+    if(qi===0||qi===1){
+      // 1~2문: 두 자리 - 한 자리, 받아내림 없음
+      do{a=r(20,99);b=r(1,9);}while((a%10)<b);
+      ans=a-b;
+    }else{
+      // 3문: 두 자리 - 두 자리, 받아내림 없음
+      do{a=r(20,99);b=r(10,a-10);}while((a%10)<(b%10)||a-b<10);
+      ans=a-b;
+    }
+    op='-';
   }else if(t==='jupiter'){a=r(2,9);b=r(1,9);op='×';ans=a*b;}
   else if(t==='saturn'){const bases=[10,20,30,40,50];a=bases[Math.floor(Math.random()*bases.length)];b=r(2,9);op='×';ans=a*b;}
   else if(t==='uranus'){const d=r(2,9),q=r(1,9);a=d*q;b=d;op='÷';ans=q;}
