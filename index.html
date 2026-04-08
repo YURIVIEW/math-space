@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W2EF19GDGD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-W2EF19GDGD');
+</script>
 <title>똑똑 수학 우주</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 <meta property="og:type" content="website">
@@ -283,6 +291,21 @@ body{
 }
 .question-text{font-size:clamp(26px,5vw,34px);color:white;letter-spacing:2px;}
 
+/* 세로셈 레이아웃 */
+.q-horizontal{font-size:clamp(12px,2vw,14px);color:#5577bb;text-align:left;margin-bottom:10px;letter-spacing:1px;font-family:'Jua','Noto Sans KR',sans-serif;}
+.q-vertical{display:flex;flex-direction:column;align-items:center;}
+.vert-rows{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.vert-row{display:flex;align-items:center;}
+.vert-op{font-size:clamp(20px,3.5vw,26px);color:#bbd4ff;width:24px;text-align:right;margin-right:8px;font-family:'Jua','Noto Sans KR',sans-serif;}
+.vert-digit{font-size:clamp(26px,4.5vw,34px);color:white;width:clamp(24px,4vw,32px);text-align:center;font-family:'Jua','Noto Sans KR',sans-serif;line-height:1.2;}
+.vert-digit.empty{color:transparent;}
+.vert-line{height:2px;background:#2a4488;border-radius:1px;margin:7px 0 7px 32px;align-self:stretch;}
+.vert-ans-wrap{margin-left:32px;}
+.vert-ans{font-size:clamp(26px,4.5vw,34px);color:#ffe066;font-family:'Jua','Noto Sans KR',sans-serif;}
+
+/* 세로셈 사용 시 행성 이모지 축소 */
+.planet-big.small{font-size:clamp(36px,6vw,44px);}
+
 /* 정답 입력창 — 시선 집중 강조 */
 .answer-section{margin-bottom:clamp(6px,1.2vw,10px);}
 .answer-display{
@@ -454,7 +477,25 @@ const BADGE_COLORS=[
 
 let gs={progress:{},currentStage:null,question:null,answer:'',hearts:3,correct:0,wrong:0,fuelFilled:0,fuelGoal:3,questionIndex:0,total:0,dailyCount:0,lastDate:'',badges:[]};
 
-function loadStorage(){try{gs.progress=JSON.parse(localStorage.getItem(GAME_KEY+'_progress')||'{}');gs.total=parseInt(localStorage.getItem(GAME_KEY+'_total')||'0');gs.lastDate=localStorage.getItem(GAME_KEY+'_date')||'';gs.dailyCount=parseInt(localStorage.getItem(GAME_KEY+'_daily')||'0');gs.badges=JSON.parse(localStorage.getItem(GAME_KEY+'_badges')||'[]');}catch(e){}}
+function loadStorage(){
+  try{
+    gs.progress=JSON.parse(localStorage.getItem(GAME_KEY+'_progress')||'{}');
+    gs.total=parseInt(localStorage.getItem(GAME_KEY+'_total')||'0');
+    gs.lastDate=localStorage.getItem(GAME_KEY+'_date')||'';
+    gs.dailyCount=parseInt(localStorage.getItem(GAME_KEY+'_daily')||'0');
+    gs.badges=JSON.parse(localStorage.getItem(GAME_KEY+'_badges')||'[]');
+    // 날짜가 바뀌면 진행상황(별점/체크) 초기화
+    const today=getTodayStr();
+    if(gs.lastDate && gs.lastDate!==today){
+      gs.progress={};
+      gs.dailyCount=0;
+      localStorage.setItem(GAME_KEY+'_progress','{}');
+      localStorage.setItem(GAME_KEY+'_daily','0');
+    }
+    gs.lastDate=today;
+    localStorage.setItem(GAME_KEY+'_date',today);
+  }catch(e){}
+}
 function saveStorage(){try{localStorage.setItem(GAME_KEY+'_progress',JSON.stringify(gs.progress));localStorage.setItem(GAME_KEY+'_total',gs.total);localStorage.setItem(GAME_KEY+'_date',gs.lastDate);localStorage.setItem(GAME_KEY+'_daily',gs.dailyCount);localStorage.setItem(GAME_KEY+'_badges',JSON.stringify(gs.badges));}catch(e){}}
 function getTodayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
@@ -545,9 +586,27 @@ function genQuestion(stage,qi){
   else if(t==='uranus'){const d=r(2,9),q=r(1,9);a=d*q;b=d;op='÷';ans=q;}
   else{
     const ops=['+','-','×','÷'];op=ops[Math.floor(Math.random()*ops.length)];
-    if(op==='+'){a=r(10,50);b=r(10,40);ans=a+b;}
-    else if(op==='-'){a=r(25,99);b=r(10,a-5);ans=a-b;}
-    else if(op==='×'){a=r(2,9);b=r(2,9);ans=a*b;}
+    if(op==='+'){
+      // 받아올림 없는 덧셈: 한+두 자리 or 두+두 자리
+      if(Math.random()<0.4){
+        // 한 자리 + 두 자리, 받아올림 없음
+        do{a=r(1,9);b=r(10,89);}while((a+(b%10))>=10||a+b>99);
+      }else{
+        // 두 자리 + 두 자리, 받아올림 없음
+        do{a=r(10,49);b=r(10,49);}while((a%10)+(b%10)>=10||a+b>99);
+      }
+      ans=a+b;
+    }else if(op==='-'){
+      // 받아내림 없는 뺄셈: 두 자리 - 한 자리 or 두 자리 - 두 자리
+      if(Math.random()<0.4){
+        // 두 자리 - 한 자리, 받아내림 없음
+        do{a=r(20,99);b=r(1,9);}while((a%10)<b);
+      }else{
+        // 두 자리 - 두 자리, 받아내림 없음
+        do{a=r(20,99);b=r(10,a-10);}while((a%10)<(b%10)||a-b<10);
+      }
+      ans=a-b;
+    }else if(op==='×'){a=r(2,9);b=r(2,9);ans=a*b;}
     else{const d=r(2,9),q=r(1,9);a=d*q;b=d;ans=q;}
   }
   return{op,a,b,ans,display:`${a} ${op} ${b} = ?`};
@@ -651,6 +710,9 @@ function renderGame(){
   const el=document.getElementById('game-screen');
   const heartsHtml=s.isBoss?'❤️'.repeat(gs.hearts)+'🖤'.repeat(3-gs.hearts):'';
   const bubbleText=s.alien.replace(/\n/g,'<br>');
+  const useVertical=(s.type==='venus'||s.type==='mars'||s.type==='neptune'||s.type==='boss'||s.type==='bonus')&&(gs.question.op==='+'||gs.question.op==='-');
+  const questionHtml=useVertical?buildVertical(gs.question):`<div class="question-text" id="question-text">${gs.question.display}</div>`;
+  const planetClass=useVertical?'planet-big small':'planet-big';
   el.innerHTML=`
     <div class="game-header">
       <button class="home-btn" onclick="renderMap()" title="기지로 돌아가기">🚀</button>
@@ -666,11 +728,11 @@ function renderGame(){
       <div class="fuel-count" id="fuel-count">${gs.fuelFilled}/3 충전됨</div>
     </div>
     <div class="planet-display">
-      <span class="planet-big">${s.emoji}</span>
+      <span class="${planetClass}">${s.emoji}</span>
       <div class="alien-bubble ${s.bubble}" id="alien-speech">${bubbleText}</div>
     </div>
-    <div class="question-box">
-      <div class="question-text" id="question-text">${gs.question.display}</div>
+    <div class="question-box" id="question-box">
+      ${questionHtml}
     </div>
     <div class="answer-section">
       <div class="answer-display" id="answer-display">?</div>
@@ -684,6 +746,31 @@ function renderGame(){
     </div>
   `;
   updateFuel();
+}
+
+// 세로셈 HTML 생성 (금성/화성 전용)
+function buildVertical(q){
+  const {a,b,op,display}=q;
+  const aStr=String(a);
+  const bStr=String(b);
+  const maxLen=Math.max(aStr.length,bStr.length);
+  // 짧은 숫자 앞을 빈 자리로 채움
+  const aPad=aStr.padStart(maxLen,'_');
+  const bPad=bStr.padStart(maxLen,'_');
+  const makeDigits=(s)=>s.split('').map(c=>
+    `<div class="vert-digit ${c==='_'?'empty':''}">${c==='_'?'0':c}</div>`
+  ).join('');
+  return `
+    <div class="q-horizontal" id="question-text">${display}</div>
+    <div class="q-vertical">
+      <div class="vert-rows">
+        <div class="vert-row"><div class="vert-op"></div>${makeDigits(aPad)}</div>
+        <div class="vert-row"><div class="vert-op">${op==='+'?'+':'−'}</div>${makeDigits(bPad)}</div>
+      </div>
+      <div class="vert-line"></div>
+      <div class="vert-ans-wrap"><div class="vert-ans">?</div></div>
+    </div>
+  `;
 }
 
 function updateFuel(){
@@ -720,7 +807,9 @@ function submitAnswer(){
       else{
         gs.answer='';disp.textContent='?';gs.questionIndex++;
         gs.question=genQuestion(gs.currentStage,gs.questionIndex);
-        const qt=document.getElementById('question-text');if(qt)qt.textContent=gs.question.display;
+        const useV=(gs.currentStage.type==='venus'||gs.currentStage.type==='mars'||gs.currentStage.type==='neptune'||gs.currentStage.type==='boss'||gs.currentStage.type==='bonus')&&(gs.question.op==='+'||gs.question.op==='-');
+        const qb=document.getElementById('question-box');
+        if(qb){qb.innerHTML=useV?buildVertical(gs.question):`<div class="question-text" id="question-text">${gs.question.display}</div>`;}
         if(speech)speech.innerHTML=gs.currentStage.alien.replace(/\n/g,'<br>');
         updateFuel();
       }
